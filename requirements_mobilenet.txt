@@ -1,0 +1,16 @@
+# ─── MobileNetV2 訓練 & 推論所需套件 ───
+# PyTorch（CPU 版，若有 GPU 請參考下方 GPU 安裝指令）
+torch
+torchvision
+
+# 影像 & 資料處理
+Pillow
+numpy
+
+# 評估指標
+scikit-learn
+
+# ─────────────────────────────────────────────
+# GPU 版 PyTorch 安裝（有 NVIDIA GPU 才需要）：
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# ─────────────────────────────────────────────

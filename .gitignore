@@ -1,0 +1,26 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# Datasets (Do NOT push large datasets to GitHub)
+dataset/
+dataset_mediapipe/
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Debugging images
+debug_hand.jpg
+*.jpg
+*.png
+
+# Exclude all .pth models EXCEPT the one we want to showcase
+*.pth
+!demo/rps_efficientnet.pth
