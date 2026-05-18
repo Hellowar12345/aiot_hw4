@@ -36,5 +36,18 @@ python demo/camera_dual_architecture.py
 - 試著比出 1, 3, 4 根手指，看看 EfficientNet 會把它誤認成什麼，或是能正確判斷出 `Error`。
 - 如果你有開這個程式，資料夾裡會即時生成一張 `debug_hand.jpg`，你可以打開來看看模型實際接收到的正方形裁切圖片長怎樣。
 
+
+## 📊 查看模型正確率
+
+執行以下指令測試模型在驗證集上的表現：
+
+```bash
+python train/test_efficientnet.py
+```
+
+執行後會顯示：Overall Accuracy: XX%
 ---
+
+> ⚠️ 注意：`demo/rpsefficient.pth` 為預訓練權重，已包含在本 repo 中，
+> 不需要額外下載，直接執行即可。
 
