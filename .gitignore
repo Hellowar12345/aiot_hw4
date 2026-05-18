@@ -9,7 +9,7 @@ env/
 .env/
 
 # Datasets (Do NOT push large datasets to GitHub)
-dataset/
+dataset/train/
 dataset_mediapipe/
 
 # IDE / Editor
