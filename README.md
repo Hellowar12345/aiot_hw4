@@ -6,6 +6,7 @@
 ## 🛠️ 環境安裝
 
 在開始之前，請先安裝需要的套件：
+
 ```bash
 pip install torch torchvision scikit-learn pillow numpy
 pip install mediapipe opencv-python
@@ -19,11 +20,14 @@ pip install mediapipe opencv-python
 ```bash
 python demo/camera_mediapipe_only.py
 ```
+
 👉 **測試重點：**
 - 隨便轉動手腕（打橫、朝下），看看會不會誤判。
 - 比出 1, 3, 4 根手指等怪異手勢，確認是否會正確顯示 `Other`。
 
 ## 🎮 測試項目二：MediaPipe + EfficientNet-B0 雙重架構版
+
+> ⚠️ 注意：`demo/rpsefficient.pth` 為預訓練權重，已包含在本 repo 中，不需要額外下載，直接執行即可。
 
 這個版本會先用 MediaPipe 抓出手部，把手部「緊湊裁切 + 補黑邊 (Letterbox)」變成 224x224 正方形，然後送進我訓練好的 `EfficientNet-B0` 模型來判斷。
 
@@ -31,11 +35,11 @@ python demo/camera_mediapipe_only.py
 ```bash
 python demo/camera_dual_architecture.py
 ```
+
 👉 **測試重點：**
 - 看看模型會不會因為你的房間背景或燈光而猜錯。
 - 試著比出 1, 3, 4 根手指，看看 EfficientNet 會把它誤認成什麼，或是能正確判斷出 `Error`。
 - 如果你有開這個程式，資料夾裡會即時生成一張 `debug_hand.jpg`，你可以打開來看看模型實際接收到的正方形裁切圖片長怎樣。
-
 
 ## 📊 查看模型正確率
 
@@ -45,9 +49,11 @@ python demo/camera_dual_architecture.py
 python train/test_efficientnet.py
 ```
 
-執行後會顯示：Overall Accuracy: XX%
----
+執行後會顯示類似以下結果：
 
-> ⚠️ 注意：`demo/rpsefficient.pth` 為預訓練權重，已包含在本 repo 中，
-> 不需要額外下載，直接執行即可。
-
+```
+Accuracy  : 95.77%
+Precision : 96.11%  (macro avg)
+Recall    : 95.77%  (macro avg)
+F1-Score  : 95.66%  (macro avg)
+```
