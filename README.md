@@ -46,7 +46,7 @@ python demo/camera_dual_architecture.py
 執行以下指令測試模型在驗證集上的表現：
 
 ```bash
-python train/test_efficientnet.py
+python demo/test_efficientnet.py
 ```
 
 執行後會顯示類似以下結果：
