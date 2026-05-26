@@ -27,9 +27,10 @@ import torch
 import torch.nn as nn
 
 # ── 路徑設定 ──────────────────────────────────
-TASK_PATH    = os.path.join('demo', 'hand_landmarker.task')
-MODEL_PATH   = os.path.join('landmark_data', 'landmark_mlp.pth')
-LE_PATH      = os.path.join('landmark_data', 'label_encoder.json')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TASK_PATH    = os.path.join(BASE_DIR, 'hand_landmarker.task')
+MODEL_PATH   = os.path.join(BASE_DIR, 'landmark_mlp.pth')
+LE_PATH      = os.path.join(BASE_DIR, 'label_encoder.json')
 
 # ── 推論設定 ──────────────────────────────────
 CONF_THRESH   = 0.70    # 低於此信心值顯示 "Other"
@@ -41,7 +42,7 @@ COLOR = {
     'rock':     (0, 100, 255),   # 橘紅
     'scissors': (0, 200, 100),   # 綠
     'paper':    (255, 180, 0),   # 藍
-    'other':    (120, 120, 120), # 灰
+    'other':    (0, 0, 255),     # 亮紅 (警告色)
 }
 # ─────────────────────────────────────────────
 
@@ -69,25 +70,72 @@ class LandmarkMLP(nn.Module):
 
 
 def normalize_landmarks(hand_landmarks):
-    """與 extract_landmarks.py 完全一致的正規化函式"""
-    wrist = hand_landmarks[0]
-    ref_x, ref_y, ref_z = wrist.x, wrist.y, wrist.z
-    mid_mcp = hand_landmarks[9]
-    scale = ((mid_mcp.x - ref_x)**2 +
-             (mid_mcp.y - ref_y)**2 +
-             (mid_mcp.z - ref_z)**2) ** 0.5 + 1e-6
+    """必須與 extract_landmarks.py 完全一致的正規化函式"""
+    coords = np.array([[lm.x, lm.y, lm.z] for lm in hand_landmarks])
+    
+    # 1. 平移歸一化：以手腕 (第0點) 為原點
+    wrist = coords[0]
+    coords = coords - wrist
+    
+    # 2. 旋轉歸一化：讓手腕(0)到中指根部(9)的連線永遠固定朝上 (Y軸負向)
+    v = coords[9] - coords[0]
+    angle = np.arctan2(v[1], v[0])
+    theta = -np.pi/2 - angle
+    c, s = np.cos(theta), np.sin(theta)
+    R = np.array([
+        [c, -s, 0],
+        [s,  c, 0],
+        [0,  0, 1]
+    ])
+    coords = coords @ R.T
+    
+    # 3. 縮放歸一化：找出距離原點最遠的點
+    max_dist = np.max(np.linalg.norm(coords, axis=1))
+    if max_dist > 0:
+        coords = coords / max_dist
+        
+    return coords.flatten().astype(np.float32)
 
-    coords = []
-    for lm in hand_landmarks:
-        coords.append((lm.x - ref_x) / scale)
-        coords.append((lm.y - ref_y) / scale)
-        coords.append((lm.z - ref_z) / scale)
-    return np.array(coords, dtype=np.float32)
+def get_geometric_gesture(landmarks):
+    """用最絕對的數學幾何判斷，直接計算哪幾根手指伸直"""
+    import math
+    def get_dist(lm1, lm2):
+        return math.sqrt((lm1.x - lm2.x)**2 + (lm1.y - lm2.y)**2)
+    
+    wrist = landmarks[0]
+    
+    # 判斷各手指是否伸展 (指尖到手腕距離 > 關節到手腕距離)
+    index_up = get_dist(wrist, landmarks[8]) > get_dist(wrist, landmarks[6])
+    middle_up = get_dist(wrist, landmarks[12]) > get_dist(wrist, landmarks[10])
+    ring_up = get_dist(wrist, landmarks[16]) > get_dist(wrist, landmarks[14])
+    pinky_up = get_dist(wrist, landmarks[20]) > get_dist(wrist, landmarks[18])
+    
+    # 拇指判斷比較特別 (用拇指尖到小指根部的距離)
+    thumb_up = get_dist(landmarks[4], landmarks[17]) > get_dist(landmarks[3], landmarks[17])
+    
+    # 嚴格定義：只有食指與中指伸直，且拇指必須彎曲 (避免拇指+食指+中指被誤判) -> 就是剪刀
+    if not thumb_up and index_up and middle_up and not ring_up and not pinky_up:
+        return 'scissors'
+        
+    # 全部彎曲，包含拇指 (避免「比讚」被誤判) -> 石頭
+    if not thumb_up and not index_up and not middle_up and not ring_up and not pinky_up:
+        return 'rock'
+        
+    # 五指全開 -> 布
+    if index_up and middle_up and ring_up and pinky_up and thumb_up:
+        return 'paper'
+        
+    return 'other'
 
 
 def load_model(model_path, le_path):
     with open(le_path) as f:
         classes = json.load(f)['classes']
+    
+    # 如果標籤是整數 [0, 1, 2]，手動轉回正確的字串名稱
+    if classes == [0, 1, 2] or classes == ["0", "1", "2"]:
+        classes = ['rock', 'paper', 'scissors']
+        
     num_classes = len(classes)
     model = LandmarkMLP(63, num_classes)
     model.load_state_dict(torch.load(model_path, map_location=DEVICE))
@@ -139,7 +187,8 @@ def main():
     model, classes = load_model(MODEL_PATH, LE_PATH)
 
     # ── 開啟攝影機 ──
-    cap = cv2.VideoCapture(0)
+    # 預設為 1 (外接攝影機)。如果打不開，請改回 0 (筆電內建攝影機)
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     if not cap.isOpened():
         print("❌ 無法開啟攝影機")
         sys.exit(1)
@@ -187,10 +236,16 @@ def main():
             pred_idx  = probs.argmax().item()
             pred_name = classes[pred_idx]
 
-            # 加入投票 buffer
-            if max_prob >= CONF_THRESH:
+            # 🚀 退回防線：讓 MLP 親自上陣！
+            # 幾何數學只用來當作「防呆過濾器 (Anomaly Detector)」，判斷是否為 OTHER
+            geom_gesture = get_geometric_gesture(hand_landmarks)
+            
+            # 如果數學計算發現這是一個正常的剪刀、石頭、布的手勢
+            if geom_gesture != 'other' and max_prob >= CONF_THRESH:
+                # 就完全信任 MLP 模型自己的判斷！
                 vote_buffer.append(pred_name)
             else:
+                # 如果手勢不合常理 (如比讚)，或者 MLP 信心度太低，才輸出 OTHER
                 vote_buffer.append('other')
 
             # 多數決投票
