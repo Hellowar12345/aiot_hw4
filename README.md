@@ -8,7 +8,6 @@
 aiot_hw4/
 ├── extract_landmarks.py        # 從資料集萃取 21 個關節點 → CSV
 ├── preprocess_dataset.py       # 資料集前處理（Letterbox 縮放）
-├── transcript.jsonl            # AI 協作與對話紀錄
 ├── report.md                   # 期末專案技術報告 (效能比較與理論)
 ├── log.md                      # 開發歷程與防呆機制進化日誌
 ├── README.md                   # 專案說明 (本文件)
