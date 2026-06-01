@@ -16,6 +16,9 @@ train/train_landmark_mlp.py
 """
 
 import os
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 import json
 import numpy as np
 import pandas as pd
@@ -26,8 +29,8 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report, confusion_matrix
 
 # ── 超參數 ────────────────────────────────────
-DATA_DIR    = 'landmark_data'
-SAVE_DIR    = 'landmark_data'
+DATA_DIR    = 'train'
+SAVE_DIR    = 'demo'
 BATCH_SIZE  = 256
 EPOCHS      = 100
 LR          = 1e-3
@@ -84,15 +87,16 @@ class LandmarkMLP(nn.Module):
 
 
 def train():
-    train_csv = os.path.join(DATA_DIR, 'train.csv')
-    test_csv  = os.path.join(DATA_DIR, 'test.csv')
+    train_csv = os.path.join(DATA_DIR, 'train_landmarks.csv')
+    test_csv  = os.path.join(DATA_DIR, 'test_landmarks.csv')
 
     if not os.path.exists(train_csv):
         print(f"❌ 找不到 {train_csv}，請先執行 extract_landmarks.py")
         return
 
     print("📦 載入資料集...")
-    train_ds = LandmarkDataset(train_csv, augment=True)
+    # 關閉 augment 讓 MLP 能夠 100% 完美學習乾淨的幾何特徵
+    train_ds = LandmarkDataset(train_csv, augment=False)
     le       = train_ds.le
     num_classes = len(le.classes_)
     print(f"   類別: {list(le.classes_)}  ({num_classes} 類)")
@@ -182,14 +186,14 @@ def train():
 
         print("\nClassification Report:")
         print(classification_report(all_true, all_pred,
-                                    target_names=le.classes_))
+                                    target_names=[str(c) for c in le.classes_]))
         print("Confusion Matrix:")
         print(confusion_matrix(all_true, all_pred))
 
     # ── 儲存 Label Encoder ──
     le_path = os.path.join(SAVE_DIR, 'label_encoder.json')
     with open(le_path, 'w') as f:
-        json.dump({'classes': list(le.classes_)}, f, ensure_ascii=False)
+        json.dump({'classes': [int(c) for c in le.classes_]}, f, ensure_ascii=False)
 
     print(f"\n✅ 模型已儲存: {best_path}")
     print(f"✅ Label encoder: {le_path}")
