@@ -198,18 +198,6 @@ SMOOTH_FRAMES = 7   # 取最近 7 幀的眾數
 | EfficientNet-B0 + MediaPipe | ~17 MB | **~5 FPS** | 嚴重卡頓 |
 | **Landmark-MLP（本方案）** | **~240 KB** | **204 FPS** | **提升 40×** |
 
-### 4.2 Demo 畫面說明
-
-![Demo 截圖](C:/Users/linmaggie/.gemini/antigravity-ide/brain/35e8d842-b23a-49f1-a1fb-5c4e147011d9/media__1780317072667.jpg)
-
-Demo 畫面顯示：
-- 畫面左上角顯示 **"Rock"**（辨識結果）
-- 畫面下方顯示 **FPS: 204**，確認即時性
-- 手指上的 **5 個紫色圓點**（指尖關鍵點可視化）
-- 系統流暢執行於 Raspberry Pi，無明顯延遲
-
----
-
 ## 5. 討論與結論
 
 ### 5.1 為何 Landmark-MLP 如此高效？
