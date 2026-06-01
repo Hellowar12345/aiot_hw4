@@ -249,7 +249,6 @@ aiot_hw4/
 2. **Demo 程式撰寫與優化**：AI 協助撰寫了 `rsp_demo.py`，完整實作了「特徵正規化 → MLP 推論 → UI 渲染」的 pipeline。
 3. **Error 類別捕捉邏輯**：在發現模型對未見過的手勢「過度自信」時，與 AI 討論並實作了 `CONF_THRESH = 0.95` 的高信心度門檻過濾器，成功捕捉出作業要求的 "Other (Error)" 類別。
 
-*(AI 協作的原始對話紀錄請見附件 `transcript.jsonl`)*
 
 ---
 
