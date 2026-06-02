@@ -1,6 +1,6 @@
 # RSP Gesture Recognition (石頭剪刀布 - 即時手勢辨識系統)
 
-本專案為 AIoT 邊緣運算手勢辨識系統。我們比較了「EfficientNet-B0 深度影像學習模型」與「Landmark-MLP 輕量化座標神經網路」兩種架構，最終實作出一套能夠在 Raspberry Pi 等邊緣裝置上達成 **高達 204 FPS** 且 **準確率 99.4%** 的即時推論系統。
+本專案為 AIoT 邊緣運算手勢辨識系統。我們從 MobileNetV2 出發，逐步比較 EfficientNet-B0 與 Landmark-MLP 等多種架構，最終實作出一套能夠在 Raspberry Pi 等邊緣裝置上達成 **高達 204 FPS** 且 **準確率 99.4%** 的即時推論系統。
 
 ## 📂 專案架構 (Project Structure)
 
@@ -12,6 +12,7 @@ aiot_hw4/
 ├── log.md                      # 開發歷程與防呆機制進化日誌
 ├── README.md                   # 專案說明 (本文件)
 ├── train/
+│   ├── train_mobilenet.py      # 初步基準：MobileNetV2 訓練腳本
 │   ├── train_efficientnet.py   # 模型一：EfficientNet-B0 訓練腳本
 │   └── train_landmark_mlp.py   # 模型二：Landmark-MLP 訓練腳本
 └── demo/
