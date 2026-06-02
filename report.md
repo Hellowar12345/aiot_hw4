@@ -41,6 +41,19 @@
 | 模型 | `sklearn.svm.SVC(kernel='rbf', C=1.0, gamma='scale')` |
 | 缺點 | 不具備空間特徵提取能力，泛化性差 |
 
+### 2.1.5 初步探索：MobileNetV2 基準實驗
+
+在正式選定主力模型前，我們先以 **MobileNetV2** 作為輕量級深度學習基準進行對照，原因是其參數量小（~3.4M），理論上適合未來邊緣裝置部署。
+
+| 項目 | 細節 |
+|------|------|
+| 架構 | MobileNetV2（ImageNet 預訓練 + Fine-tune） |
+| 訓練設定 | 凍結前段特徵層，僅訓練分類頭 |
+| 測試集準確率 | ~88% |
+| 缺點 | 對剪刀手勢辨識不穩定，準確率不及預期 |
+
+由於 MobileNetV2 的準確率約在 88%，辨識剪刀手勢時尤其不穩定，因此決定進一步改用特徵提取能力更強的 EfficientNet-B0 作為主要比較模型（訓練腳本：`train/train_mobilenet.py`）。
+
 ### 2.2 第二代：EfficientNet-B0 + MediaPipe 雙重架構
 
 為提升精度，改採深度學習模型，整合 MediaPipe 手部偵測：
