@@ -65,7 +65,7 @@
 1. **MediaPipe Hand Landmarker**：偵測畫面中的手部位置，取得 21 個 3D 關節點
 2. **Bounding Box 裁切**：根據關節點計算手部邊界框（含 15px padding）
 3. **Letterbox 縮放**：保持原始長寬比，黑邊補齊至 224×224
-4. **EfficientNet-B0 推論**：以 PyTorch 預訓練模型 Fine-tune，輸出 Rock / Scissors / Paper / Error 四分類
+4. **EfficientNet-B0 推論**：以 PyTorch 預訓練模型 Fine-tune，輸出 Rock / Scissors / Paper / Other 四分類
 
 **訓練設定：**
 ```
