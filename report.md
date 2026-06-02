@@ -23,11 +23,14 @@
 
 ```
 第一代：SVM Baseline
-    ↓ 精度不足
+    ↓ 精度不足，升級深度學習
 第二代：EfficientNet-B0 + MediaPipe 雙重架構
-    ↓ Raspberry Pi 上 FPS 過低（~5 FPS）
-第三代：Landmark-MLP 輕量化架構 ← 最終部署版本
-    ↓ 達成 204 FPS
+    ↓ 測試集 95.77%，但實際攝影機 Demo 時 Domain Gap 嚴重
+      剪刀手勢常誤判，光線變化即失效
+第三代：Landmark-MLP 輕量化架構（捨棄像素，改學骨架座標）
+    ↓ 準確率躍升至 99.46%，但 MediaPipe + MLP 在 Raspberry Pi 上 FPS 仍受限
+第三代優化：Lightweight 管線（精簡推論流程）
+    ↓ 最終達成 204 FPS ← 最終部署版本
 ```
 
 ### 2.1 第一代：SVM Baseline
@@ -81,7 +84,7 @@ Epochs：3（Transfer Learning，僅訓練 classifier head）
 | Recall | 95.77% (macro avg) |
 | F1-Score | 95.66% (macro avg) |
 
-> ⚠️ **問題發現：** 將此架構部署至 Raspberry Pi 後，由於 EfficientNet-B0 模型（~17MB，4M+ 參數）的 CPU 推論延遲，加上 MediaPipe 的 overhead，整體 FPS 僅約 **5 FPS**，Demo 畫面嚴重卡頓，無法實際使用。
+> ⚠️ **問題發現：** 雖然測試集準確率達到 95.77%，但將此架構實際接上攝影機進行 Demo 時，卻遭遇嚴重的 **Domain Gap（領域差異）** 問題。訓練集為乾淨去背的手部圖片，而真實攝影機拍攝的影像帶有背景雜訊與室內光線變化，導致「剪刀」手勢常常被誤判，在光線較暗的環境下更是大幅失效。此外，EfficientNet-B0（~17MB）部署至 Raspberry Pi 後，推論延遲加上 MediaPipe overhead，FPS 僅約 **5 FPS**，兩項致命缺陷促使我們徹底重新思考架構。
 
 ---
 
@@ -284,18 +287,26 @@ Epochs：3（Transfer Learning，僅訓練 classifier head）
 
 ### 3.1 設計動機
 
-效能瓶頸分析：
+第二代架構面臨兩大致命問題，促使我們進行根本性的架構轉移：
+
+**問題一：Domain Gap 導致實際 Demo 準確率崩潰**
+
+EfficientNet-B0 在測試集雖有 95.77% 的準確率，但本質上它學的是像素的統計特徵，對光線、膚色與背景極度敏感。在真實環境下，剪刀手勢誤判率高，且難以透過更多訓練資料根治。
+
+**問題二：MediaPipe 骨架座標本身已足夠**
+
+實驗中發現，若直接使用純幾何規則（計算手指伸直數量）判斷手勢，效果已優於 EfficientNet。這揭示了一個關鍵洞察：手勢的辨識資訊不在像素裡，在骨架的幾何形狀裡。
 
 ```
 第二代架構的計算瓶頸：
 ┌─────────────────────────────────────────┐
-│ MediaPipe 手部偵測（~7.8MB 模型）         │  ← 必要，但可精簡後處理
+│ MediaPipe 手部偵測（~7.8MB 模型）         │  ← 必要，保留
 │ 影像裁切 + Letterbox resize（CPU 密集）   │  ← 可完全省略！
-│ EfficientNet-B0 推論（17MB, 4M params）  │  ← 替換為輕量模型
+│ EfficientNet-B0 推論（17MB, 4M params）  │  ← 替換為輕量 MLP
 └─────────────────────────────────────────┘
 ```
 
-**核心洞察：** MediaPipe 偵測手部時，已輸出精確的 **21 個 3D 關節點座標**。這些關節點已隱含了手形的完整幾何資訊，**根本不需要再把影像裁切後餵給 CNN**！只需把這 63 維的座標向量（21 個點 × x, y, z）直接送進一個輕量 MLP，即可完成分類。
+**核心洞察：** MediaPipe 偵測手部時，已輸出精確的 **21 個 3D 關節點座標**。只需把這 63 維的座標向量（21 個點 × x, y, z）直接送進一個輕量 MLP，即可完成分類，**完全不需要處理任何像素**！
 
 ### 3.2 特徵工程：關節點正規化
 
